@@ -99,5 +99,28 @@ func createUser(g *gin.Context) {
 
 	g.JSON(http.StatusCreated, gin.H{"Tool": user})
 }
-func updateUser(g *gin.Context) {}
+func updateUser(g *gin.Context) {
+	id := g.Param("id")
+	var user User
+
+	if err := g.ShouldBindJSON(&user); err != nil {
+		g.JSON(http.StatusBadRequest, gin.H{"Bad Request": "There is an error with the request, Try Again!"})
+	}
+
+	conn, err := pgx.Connect(context.Background(), os.Getenv("DATABASE_URL"))
+	if err != nil {
+		log.Fatalf("Unable to connect to db, %v", err)
+	}
+
+	defer conn.Close(context.Background())
+
+	_, err = conn.Exec(context.Background(), "UPDATE users SET name = $1, dob = $2, address = $3, description = $4 WHERE id = $5", &user.Name, &user.Dob, &user.Address, &user.Description, id)
+
+	if err != nil {
+		g.JSON(http.StatusInternalServerError, gin.H{"Internal Server Error": "Unable to Finish Query!"})
+	}
+
+	g.JSON(http.StatusCreated, gin.H{"Tool": user})
+
+}
 func deleteUser(g *gin.Context) {}
