@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
+	_ "github.com/joho/godotenv/autoload"
 )
 
 type User struct {
@@ -33,7 +34,7 @@ func main() {
 
 }
 
-func getUser(g *gin.Context) {
+func getUsers(g *gin.Context) {
 	conn, err := pgx.Connect(context.Background(), os.Getenv("DATABASE_URL"))
 	if err != nil {
 		log.Fatalf("Unable to connect to db, %v", err)
@@ -58,7 +59,24 @@ func getUser(g *gin.Context) {
 
 	g.JSON(http.StatusOK, gin.H{"Users": Users})
 }
-func getUsers(g *gin.Context)   {}
+func getUser(g *gin.Context) {
+	id := g.Param("id")
+	conn, err := pgx.Connect(context.Background(), os.Getenv("DATABASE_URL"))
+	if err != nil {
+		log.Fatalf("Unable to connect to db, %v", err)
+	}
+
+	defer conn.Close(context.Background())
+
+	rows := conn.QueryRow(context.Background(), "SELECT id, address, dob, description, name FROM users WHERE id = $1", id)
+	var User User
+	if err := rows.Scan(&User.Id, &User.Name, &User.Dob, &User.Address, &User.Description); err != nil {
+		log.Fatalf("Unable to List users from db, %v", err)
+	}
+
+	g.JSON(http.StatusOK, gin.H{"User": "User"})
+
+}
 func createUser(g *gin.Context) {}
 func updateUser(g *gin.Context) {}
 func deleteUser(g *gin.Context) {}
