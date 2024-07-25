@@ -123,4 +123,27 @@ func updateUser(g *gin.Context) {
 	g.JSON(http.StatusCreated, gin.H{"Tool": user})
 
 }
-func deleteUser(g *gin.Context) {}
+func deleteUser(g *gin.Context) {
+	id := g.Param("id")
+
+	conn, err := pgx.Connect(context.Background(), os.Getenv("DATABASE_URL"))
+	if err != nil {
+		log.Fatalf("Unable to connect to db, %v", err)
+	}
+
+	defer conn.Close(context.Background())
+
+	query, err := conn.Exec(context.Background(), "DELETE FROM users WHERE id = $1", id)
+
+	if err != nil {
+		log.Fatalf("Unable to query to db, %v", err)
+	}
+
+	if query.RowsAffected() == 0 {
+		g.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	g.JSON(http.StatusOK, gin.H{"message": "User deleted successfully"})
+
+}
